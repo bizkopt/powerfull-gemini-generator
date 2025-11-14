@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tower Battles Loadout Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-900 flex items-center justify-center p-8">
+  <div class="max-w-5xl w-full">
+    <h1 class="text-5xl font-bold text-center mb-12">
+      <span class="text-indigo-400">Tower Battles</span>
+      <span class="text-white"> Loadout</span>
+    </h1>
+    
+    <div id="loadout" class="flex gap-4 mb-8 justify-center flex-wrap"></div>
+    
+    <div class="flex justify-center mb-12">
+      <button id="generateBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg py-4 px-12 rounded-full transition-all shadow-lg">
+        Generate New Loadout
+      </button>
+    </div>
+    
+    <div class="bg-slate-800 rounded-2xl p-8 border border-slate-700">
+      <h2 class="text-2xl font-bold text-white mb-6">Ban List</h2>
+      
+      <div id="banList" class="grid grid-cols-5 gap-3 mb-4"></div>
+      
+      <p class="text-slate-400 text-sm text-center">
+        Click a tower to toggle its banned status. If both DJ and Commander are banned, slot 2 will be empty.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const availableTowers = [
+      'Aviator', 'Phaser', 'Marksman', 'Mercenary', 'Mortar',
+      'Barracks', 'Patrol', 'Commando', 'Cryo-Gunner', 'Railgunner',
+      'Enforcer', 'Shotgunner', 'Soldier', 'Fragger', 'Flamethrower',
+      'Golden Scout', 'Golden Commando', 'Hallowboomer', 'Tuber',
+      'Zed', 'Graveyard'
+    ];
+
+    const ccTowers = ['Aviator', 'Mortar', 'Enforcer', 'Shotgunner', 'Fragger', 'Hallowboomer', 'Tuber'];
+    const egTowers = ['Aviator', 'Mercenary', 'Mortar', 'Enforcer', 'Shotgunner', 'Soldier', 'Fragger', 'Flamethrower', 'Golden Scout', 'Hallowboomer', 'Tuber'];
+    const hdTowers = ['DJ', 'Commander', 'Aviator', 'Phaser', 'Marksman', 'Mercenary', 'Mortar', 'Barracks', 'Patrol', 'Commando', 'Cryo-Gunner', 'Railgunner', 'Enforcer', 'Shotgunner', 'Soldier', 'Fragger', 'Flamethrower', 'Golden Scout', 'Golden Commando', 'Hallowboomer', 'Tuber', 'Zed', 'Graveyard'];
+
+    const allBanTowers = ['DJ', 'Commander', ...availableTowers];
+
+    let loadout = ['Farm', 'DJ', 'Aviator', 'Phaser', 'Marksman'];
+    let bannedTowers = [];
+
+    function getSlotColor(index) {
+      if (index === 0) return 'border-green-500';
+      if (index === 1) return 'border-cyan-500';
+      return 'border-amber-500';
+    }
+
+    function renderLoadout() {
+      const loadoutDiv = document.getElementById('loadout');
+      loadoutDiv.innerHTML = '';
+      
+      loadout.forEach((tower, index) => {
+        const slot = document.createElement('div');
+        slot.className = `bg-slate-800 border-2 ${getSlotColor(index)} rounded-xl px-8 py-6 min-w-[160px] text-center`;
+        slot.innerHTML = `<span class="text-white text-xl font-bold">${tower || 'Empty'}</span>`;
+        loadoutDiv.appendChild(slot);
+      });
+    }
+
+    function renderBanList() {
+      const banListDiv = document.getElementById('banList');
+      banListDiv.innerHTML = '';
+      
+      allBanTowers.forEach(function(tower) {
+        const isBanned = bannedTowers.includes(tower);
+        const btn = document.createElement('button');
+        const btnClass = isBanned
+          ? 'bg-red-600 text-white'
+          : 'bg-slate-700 text-white hover:bg-slate-600';
+        btn.className = 'py-3 px-4 rounded-lg font-semibold transition-all ' + btnClass;
+        btn.textContent = tower;
+        btn.onclick = function() { toggleBan(tower); };
+        banListDiv.appendChild(btn);
+      });
+    }
+
+    function toggleBan(tower) {
+      if (bannedTowers.includes(tower)) {
+        bannedTowers = bannedTowers.filter(t => t !== tower);
+      } else {
+        bannedTowers.push(tower);
+      }
+      renderBanList();
+    }
+
+    function hasCCTower(towers) {
+      return towers.some(t => ccTowers.includes(t));
+    }
+
+    function hasEGTower(towers) {
+      return towers.some(t => egTowers.includes(t));
+    }
+
+    function hasHDTower(towers) {
+      return towers.some(t => hdTowers.includes(t));
+    }
+
+    function generateLoadout() {
+      const slot1 = 'Farm';
+      
+      const djBanned = bannedTowers.includes('DJ');
+      const commanderBanned = bannedTowers.includes('Commander');
+      
+      let slot2;
+      if (djBanned && commanderBanned) {
+        slot2 = null;
+      } else if (djBanned) {
+        slot2 = 'Commander';
+      } else if (commanderBanned) {
+        slot2 = 'DJ';
+      } else {
+        slot2 = Math.random() < 0.5 ? 'DJ' : 'Commander';
+      }
+      
+      const available = availableTowers.filter(tower => !bannedTowers.includes(tower));
+      if (available.length < 3) return;
+      
+      let slot3, slot4, slot5;
+      let attempts = 0;
+      const maxAttempts = 1000;
+      
+      while (attempts < maxAttempts) {
+        const shuffled = [...available].sort(() => Math.random() - 0.5);
+        const tempSlot3 = shuffled[0];
+        const tempSlot4 = shuffled[1];
+        const tempSlot5 = shuffled[2];
+        
+        const randomTowers = [tempSlot3, tempSlot4, tempSlot5];
+        
+        if (!hasCCTower([tempSlot3])) {
+          attempts++;
+          continue;
+        }
+        
+        if (!hasEGTower([tempSlot3, tempSlot4])) {
+          attempts++;
+          continue;
+        }
+        
+        if (!hasHDTower(randomTowers)) {
+          attempts++;
+          continue;
+        }
+        
+        slot3 = tempSlot3;
+        slot4 = tempSlot4;
+        slot5 = tempSlot5;
+        break;
+      }
+      
+      if (attempts >= maxAttempts) {
+        const shuffled = [...available].sort(() => Math.random() - 0.5);
+        slot3 = shuffled[0];
+        slot4 = shuffled[1];
+        slot5 = shuffled[2];
+      }
+      
+      loadout = [slot1, slot2, slot3, slot4, slot5];
+      renderLoadout();
+    }
+
+    document.getElementById('generateBtn').onclick = generateLoadout;
+
+    renderLoadout();
+    renderBanList();
+  </script>
+</body>
+</html>
